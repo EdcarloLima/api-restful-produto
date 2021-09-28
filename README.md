@@ -1,2 +1,2 @@
 # api-restful-produto
-Uma simples demostração de API RESTful com Laravel
+Uma simples demonstração de API RESTfull com Laravel
