@@ -2,91 +2,136 @@
 
 namespace App\Http\Controllers;
 
+use App\Helpers\Wizard;
+use App\Http\Requests\ProdutoRequest;
 use App\Models\Produto;
 use Illuminate\Http\Request;
 
 class ProdutoController extends Controller
 {
+    use Wizard;
+
+    /**
+     * @var Produto
+     */
+    protected $pro;
+
     public function  __construct()
     {
         header('Access-Control-Allow-Origin: *');
+        $this->pro = new Produto();
     }
 
     /**
-     * Display a listing of the resource.
-     *
-     * @return \Illuminate\Http\Response
+     * @return \Illuminate\Http\JsonResponse
      */
     public function index()
     {
-        $produto = Produto::all();
-        return response()->json(['data' => $produto, 'status' => true]);
+        try {
+            $produto = $this->pro->all();
+
+            if ($produto->count())
+                return response()->json(['data' => $produto, 'status' => true]);
+            else
+                return response()->json(['data' => 'Nenhum produto cadastrado.', 'status' => false]);
+
+        } catch (\Throwable $error) {
+            $className = (new \ReflectionClass(get_class()))->getShortName();
+            self::createLog($className,$error);
+            return response()->json(['data' => 'Falha no carregamentos dos produtos.', 'status' => false]);
+        }
     }
 
     /**
-     * Store a newly created resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param ProdutoRequest $request
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function store(Request $request)
+    public function store(ProdutoRequest $request)
     {
-        $dados = $request->all();
-        $produto = Produto::create($dados);
-
-        if ($produto)
-            return response()->json(['data' => $produto, 'status' => true]);
-        else
-            return response()->json(['data' => 'Falha no cadastro de produto.', 'status' => false]);
-    }
-
-    /**
-     * Display the specified resource.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function show($id)
-    {
-        $produto = Produto::find($id);
-
-        if ($produto)
-            return response()->json(['data' => $produto, 'status' => true]);
-        else
-            return response()->json(['data' => 'O produto não foi encontrado.', 'status' => false]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     *
-     * @param  \Illuminate\Http\Request  $request
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
-     */
-    public function update(Request $request, $id)
-    {
-        $produto = Produto::find($id);
-        if ($produto) {
+        try {
             $dados = $request->all();
-            $produto->update($dados);
-            return response()->json(['data' => $produto, 'status' => true]);
-        } else
-            return response()->json(['data' => 'Falha na atualização do produto.', 'status' => false]);
+            $produto = $this->pro->create($dados);
+
+            if ($produto)
+                return response()->json(['data' => $produto, 'status' => true]);
+            else
+                return response()->json(['data' => 'Falha no cadastro de produto.', 'status' => false]);
+
+        } catch (\Throwable $error) {
+            $className = (new \ReflectionClass(get_class()))->getShortName();
+            self::createLog($className,$error);
+            return response()->json(['data' => 'Falha no cadastro.', 'status' => false]);
+        }
     }
 
     /**
-     * Remove the specified resource from storage.
-     *
-     * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy($id)
+    public function show(int $id)
     {
-        $produto = Produto::find($id);
-        $produto->delete();
-        if ($produto)
-            return response()->json(['data' => 'Produto removido com sucesso.', 'status' => true]);
-        else
-            return response()->json(['data' => 'Falha na remoção do produto.', 'status' => false]);
+        try {
+            $produto = $this->pro->find($id);
+
+            if ($produto)
+                return response()->json(['data' => $produto, 'status' => true]);
+            else
+                return response()->json(['data' => 'O produto não foi encontrado.', 'status' => false]);
+
+        } catch (\Throwable $error) {
+            $className = (new \ReflectionClass(get_class()))->getShortName();
+            self::createLog($className,$error);
+            return response()->json(['data' => 'Falha na busca do produto..', 'status' => false]);
+        }
+    }
+
+    /**
+     * @param ProdutoRequest $request
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function update(ProdutoRequest $request, int $id)
+    {
+        try {
+            $produto = $this->pro->find($id);
+
+            if ($produto) {
+                $dados = $request->all();
+                $atualizado = $produto->update($dados);
+
+                if (!empty($atualizado))
+                    return response()->json(['data' => $produto, 'status' => true]);
+                else
+                    return response()->json(['data' => 'Falha na atualização do produto', 'status' => false]);
+            } else
+                return response()->json(['data' => 'Falha na atualização do produto.', 'status' => false]);
+
+        } catch (\Throwable $error) {
+            $className = (new \ReflectionClass(get_class()))->getShortName();
+            self::createLog($className,$error);
+            return response()->json(['data' => 'Falha na atualização.', 'status' => false]);
+        }
+    }
+
+    /**
+     * @param int $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function destroy(int $id)
+    {
+        try {
+            $produto  = $this->pro->find($id);
+            $excluido = $produto->delete();
+
+            if ($excluido)
+                return response()->json(['data' => 'Produto excluído com sucesso.', 'status' => true]);
+            else
+                return response()->json(['data' => 'Falha na exclusão do produto.', 'status' => false]);
+
+        } catch (\Throwable $error) {
+            $className = (new \ReflectionClass(get_class()))->getShortName();
+            self::createLog($className,$error);
+            return response()->json(['data' => 'Falha na exclusão.', 'status' => false]);
+        }
     }
 }
